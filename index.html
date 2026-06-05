@@ -442,7 +442,7 @@ input[type=text].err{border-color:#e53e3e}
         <div id="sec-push" class="proc-section">
           <div class="form-grid">
             <div class="form-row">
-              <label>From Plant <span class="req">*</span></label>
+              <label>Source Plant <span class="req">*</span></label>
               <select class="sel" id="push-from-plant">
                 <option value="">Select Plant</option>
                 <option>CR11</option>
@@ -450,7 +450,7 @@ input[type=text].err{border-color:#e53e3e}
               </select>
             </div>
             <div class="form-row">
-              <label>From Storage Location <span class="req">*</span></label>
+              <label>Source Storage Location <span class="req">*</span></label>
               <select class="sel" id="push-from-sloc" onchange="syncStorageLocations('push')">
                 <option value="">Select Storage Location</option>
                 <option>1000</option>
@@ -464,27 +464,23 @@ input[type=text].err{border-color:#e53e3e}
               </select>
             </div>
             <div class="form-row">
-              <label>Work Center <span class="req">*</span></label>
-              <select class="sel" id="push-wc">
-                <option value="">Select Work Center</option>
-                <option>Pack 1</option>
-                <option>Pack 2</option>
+              <label>Shipment Type <span class="req">*</span></label>
+              <select class="sel" id="push-shipment-type" onchange="onShipmentTypeChange('push')">
+                <option value="">Select Shipment Type</option>
+                <option value="STO">STO</option>
+                <option value="SO">SO</option>
               </select>
             </div>
-            <div class="form-row">
-              <label>Storage Bin</label>
-              <input type="text" id="push-bin" placeholder="Enter Storage Bin"/>
-            </div>
-            <div class="form-row">
-              <label>To Plant <span class="req">*</span></label>
+            <div class="form-row ship-sto" id="push-row-to-plant" style="display:none">
+              <label>Destination Plant <span class="req">*</span></label>
               <select class="sel" id="push-to-plant">
                 <option value="">Select Plant</option>
                 <option>CR11</option>
                 <option>CR12</option>
               </select>
             </div>
-            <div class="form-row">
-              <label>To Storage Location <span class="req">*</span></label>
+            <div class="form-row ship-sto" id="push-row-to-sloc" style="display:none">
+              <label>Destination Storage Location <span class="req">*</span></label>
               <select class="sel" id="push-to-sloc" onchange="syncStorageLocations('push')">
                 <option value="">Select Storage Location</option>
                 <option>1000</option>
@@ -496,6 +492,26 @@ input[type=text].err{border-color:#e53e3e}
                 <option>SUS4</option>
                 <option>SUS5</option>
               </select>
+            </div>
+            <div class="form-row ship-so" id="push-row-sold-to" style="display:none">
+              <label>Sold-To Party <span class="req">*</span></label>
+              <input type="text" id="push-sold-to" placeholder="Enter Sold-To Party"/>
+            </div>
+            <div class="form-row ship-so" id="push-row-ship-to" style="display:none">
+              <label>Ship-To Party <span class="req">*</span></label>
+              <input type="text" id="push-ship-to" placeholder="Enter Ship-To Party"/>
+            </div>
+            <div class="form-row">
+              <label>Work Center <span class="req">*</span></label>
+              <select class="sel" id="push-wc">
+                <option value="">Select Work Center</option>
+                <option>Pack 1</option>
+                <option>Pack 2</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>Storage Bin</label>
+              <input type="text" id="push-bin" placeholder="Enter Storage Bin"/>
             </div>
           </div>
         </div>
@@ -562,7 +578,7 @@ input[type=text].err{border-color:#e53e3e}
         <div id="sec-sterilization" class="proc-section">
           <div class="form-grid">
             <div class="form-row">
-              <label>From Plant <span class="req">*</span></label>
+              <label>Source Plant <span class="req">*</span></label>
               <select class="sel" id="ster-from-plant">
                 <option value="">Select Plant</option>
                 <option>CR11</option>
@@ -570,7 +586,7 @@ input[type=text].err{border-color:#e53e3e}
               </select>
             </div>
             <div class="form-row">
-              <label>From Storage Location <span class="req">*</span></label>
+              <label>Source Storage Location <span class="req">*</span></label>
               <select class="sel" id="ster-from-sloc" onchange="syncStorageLocations('ster')">
                 <option value="">Select Storage Location</option>
                 <option>1000</option>
@@ -582,6 +598,44 @@ input[type=text].err{border-color:#e53e3e}
                 <option>SUS4</option>
                 <option>SUS5</option>
               </select>
+            </div>
+            <div class="form-row">
+              <label>Shipment Type <span class="req">*</span></label>
+              <select class="sel" id="ster-shipment-type" onchange="onShipmentTypeChange('ster')">
+                <option value="">Select Shipment Type</option>
+                <option value="STO">STO</option>
+                <option value="SO">SO</option>
+              </select>
+            </div>
+            <div class="form-row ship-sto" id="ster-row-to-plant" style="display:none">
+              <label>Destination Plant <span class="req">*</span></label>
+              <select class="sel" id="ster-to-plant">
+                <option value="">Select Plant</option>
+                <option>CR11</option>
+                <option>CR12</option>
+              </select>
+            </div>
+            <div class="form-row ship-sto" id="ster-row-to-sloc" style="display:none">
+              <label>Destination Storage Location <span class="req">*</span></label>
+              <select class="sel" id="ster-to-sloc" onchange="syncStorageLocations('ster')">
+                <option value="">Select Storage Location</option>
+                <option>1000</option>
+                <option>2000</option>
+                <option>SUK1</option>
+                <option>SUS1</option>
+                <option>SUS2</option>
+                <option>SUS3</option>
+                <option>SUS4</option>
+                <option>SUS5</option>
+              </select>
+            </div>
+            <div class="form-row ship-so" id="ster-row-sold-to" style="display:none">
+              <label>Sold-To Party <span class="req">*</span></label>
+              <input type="text" id="ster-sold-to" placeholder="Enter Sold-To Party"/>
+            </div>
+            <div class="form-row ship-so" id="ster-row-ship-to" style="display:none">
+              <label>Ship-To Party <span class="req">*</span></label>
+              <input type="text" id="ster-ship-to" placeholder="Enter Ship-To Party"/>
             </div>
             <div class="form-row">
               <label>Work Center <span class="req">*</span></label>
@@ -596,31 +650,9 @@ input[type=text].err{border-color:#e53e3e}
               <input type="text" id="ster-bin" placeholder="Enter Storage Bin"/>
             </div>
             <div class="form-row">
-              <label>To Plant <span class="req">*</span></label>
-              <select class="sel" id="ster-to-plant">
-                <option value="">Select Plant</option>
-                <option>CR11</option>
-                <option>CR12</option>
-              </select>
+              <label>Order Number <span class="req">*</span></label>
+              <input type="text" id="ster-order" placeholder="Enter Order Number" maxlength="20"/>
             </div>
-            <div class="form-row">
-              <label>To Storage Location <span class="req">*</span></label>
-              <select class="sel" id="ster-to-sloc" onchange="syncStorageLocations('ster')">
-                <option value="">Select Storage Location</option>
-                <option>1000</option>
-                <option>2000</option>
-                <option>SUK1</option>
-                <option>SUS1</option>
-                <option>SUS2</option>
-                <option>SUS3</option>
-                <option>SUS4</option>
-                <option>SUS5</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-row" style="margin-top:8px">
-            <label>STO Number <span class="req">*</span></label>
-            <input type="text" id="ster-sto" placeholder="Enter STO Number" maxlength="20"/>
           </div>
         </div>
 
@@ -794,7 +826,7 @@ input[type=text].err{border-color:#e53e3e}
     <div class="modal-body" style="text-align:center;padding:20px">
       <div style="font-size:36px;margin-bottom:10px">🧪</div>
       <p style="font-size:13px;color:#333;line-height:1.8">
-        STO Number: <strong id="ster-sto-display" style="color:#0854A0"></strong><br/>
+        Order Number: <strong id="ster-sto-display" style="color:#0854A0"></strong><br/>
         Status: <strong style="color:#22c55e">✔ Sterilization validated</strong><br/>
         All handling units have passed sterilization checks.
       </p>
@@ -1094,6 +1126,13 @@ function onProcessTypeChange() {
   if (val) document.getElementById('sec-' + val)?.classList.add('visible');
 }
 
+function onShipmentTypeChange(prefix) {
+  const type = document.getElementById(prefix + '-shipment-type').value;
+  const sec  = document.getElementById('sec-' + (prefix === 'ster' ? 'sterilization' : prefix));
+  sec.querySelectorAll('.ship-sto').forEach(r => r.style.display = type === 'STO' ? '' : 'none');
+  sec.querySelectorAll('.ship-so').forEach(r => r.style.display = type === 'SO' ? '' : 'none');
+}
+
 function syncStorageLocations(prefix) {
   const fromSel = document.getElementById(prefix + '-from-sloc');
   const toSel   = document.getElementById(prefix + '-to-sloc');
@@ -1120,19 +1159,7 @@ function proceedProcess() {
   if (!type) { toast('Please select a process type', 'error'); return; }
 
   if (type === 'push') {
-    const fromPlant = document.getElementById('push-from-plant').value;
-    const fromSloc  = document.getElementById('push-from-sloc').value;
-    const wc        = document.getElementById('push-wc').value;
-    const toPlant   = document.getElementById('push-to-plant').value;
-    const toSloc    = document.getElementById('push-to-sloc').value;
-    if (!fromPlant || !fromSloc || !wc || !toPlant || !toSloc) {
-      toast('Please fill in all mandatory fields (From Plant, From Storage Location, Work Center, To Plant, and To Storage Location)', 'error');
-      return;
-    }
-    if (fromSloc === toSloc) {
-      toast('From and To Storage Location cannot be the same', 'error');
-      return;
-    }
+    if (!validateShipmentFields('push')) return;
     currentProcess = 'push'; stoNumber = '';
     startPackingProcess();
 
@@ -1161,25 +1188,47 @@ function proceedProcess() {
     return;
 
   } else if (type === 'sterilization') {
-    const fromPlant = document.getElementById('ster-from-plant').value;
-    const fromSloc  = document.getElementById('ster-from-sloc').value;
-    const wc        = document.getElementById('ster-wc').value;
-    const toPlant   = document.getElementById('ster-to-plant').value;
-    const toSloc    = document.getElementById('ster-to-sloc').value;
-    const sto       = document.getElementById('ster-sto').value.trim();
-    if (!fromPlant || !fromSloc || !wc || !toPlant || !toSloc) {
-      toast('Please fill in all mandatory fields (From Plant, From Storage Location, Work Center, To Plant, and To Storage Location)', 'error');
-      return;
-    }
-    if (fromSloc === toSloc) {
-      toast('From and To Storage Location cannot be the same', 'error');
-      return;
-    }
-    if (!sto) { toast('Please enter the STO Number', 'error'); return; }
+    if (!validateShipmentFields('ster')) return;
+    const order = document.getElementById('ster-order').value.trim();
+    if (!order) { toast('Please enter the Order Number', 'error'); return; }
     currentProcess = 'sterilization';
-    stoNumber = sto;
+    stoNumber = order;
     startPackingProcess();
   }
+}
+
+/* Validates Source/Shipment-type/conditional fields shared by Push & Sterilization */
+function validateShipmentFields(prefix) {
+  const fromPlant = document.getElementById(prefix + '-from-plant').value;
+  const fromSloc  = document.getElementById(prefix + '-from-sloc').value;
+  const shipType  = document.getElementById(prefix + '-shipment-type').value;
+  const wc        = document.getElementById(prefix + '-wc').value;
+
+  if (!fromPlant || !fromSloc || !shipType || !wc) {
+    toast('Please fill in all mandatory fields (Source Plant, Source Storage Location, Shipment Type, and Work Center)', 'error');
+    return false;
+  }
+
+  if (shipType === 'STO') {
+    const toPlant = document.getElementById(prefix + '-to-plant').value;
+    const toSloc  = document.getElementById(prefix + '-to-sloc').value;
+    if (!toPlant || !toSloc) {
+      toast('Please select Destination Plant and Destination Storage Location', 'error');
+      return false;
+    }
+    if (fromSloc === toSloc) {
+      toast('Source and Destination Storage Location cannot be the same', 'error');
+      return false;
+    }
+  } else if (shipType === 'SO') {
+    const soldTo = document.getElementById(prefix + '-sold-to').value.trim();
+    const shipTo = document.getElementById(prefix + '-ship-to').value.trim();
+    if (!soldTo || !shipTo) {
+      toast('Please enter Sold-To Party and Ship-To Party', 'error');
+      return false;
+    }
+  }
+  return true;
 }
 
 function startPackingProcess() {
