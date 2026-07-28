@@ -425,6 +425,17 @@ input[type=text].err{border-color:#e53e3e}
       <p>Select a process type and enter the required information</p>
     </div>
     <div class="modal-body">
+      <div class="form-row" style="margin-bottom:4px">
+        <label style="margin-bottom:6px;display:block;font-weight:600;font-size:13px;color:#32465a">Selection Mode</label>
+        <div style="display:flex;gap:28px;align-items:center;padding:8px 12px;background:#f0f4f8;border-radius:6px;border:1px solid #d1dce8">
+          <label style="display:flex;align-items:center;gap:7px;font-weight:normal;cursor:pointer;font-size:13px;color:#32465a">
+            <input type="radio" name="sel-mode" value="destination" checked onchange="onSelectionModeChange()" style="cursor:pointer;accent-color:#0854A0;width:15px;height:15px"> Selection by Destination
+          </label>
+          <label style="display:flex;align-items:center;gap:7px;font-weight:normal;cursor:pointer;font-size:13px;color:#32465a">
+            <input type="radio" name="sel-mode" value="reference-hu" onchange="onSelectionModeChange()" style="cursor:pointer;accent-color:#0854A0;width:15px;height:15px"> Selection by Reference HU
+          </label>
+        </div>
+      </div>
       <div class="form-row">
         <label>Process Type <span class="req">*</span></label>
         <select class="sel" id="sel-process" onchange="onProcessTypeChange()">
@@ -436,6 +447,10 @@ input[type=text].err{border-color:#e53e3e}
         </select>
       </div>
 
+      <div class="form-row" id="ref-hu-row" style="display:none">
+        <label>Reference HU <span class="req">*</span></label>
+        <input type="text" class="sel" id="ref-hu-input" placeholder="Scan / Enter Reference HU (max 20 chars)" maxlength="20" oninput="onRefHUInput()" style="font-family:monospace;letter-spacing:0.5px"/>
+      </div>
       <div id="proc-fields">
 
         <!-- PUSH fields -->
@@ -443,7 +458,7 @@ input[type=text].err{border-color:#e53e3e}
           <div class="form-grid">
             <div class="form-row">
               <label>Source Plant <span class="req">*</span></label>
-              <select class="sel" id="push-from-plant">
+              <select class="sel" id="push-from-plant" onchange="onFromPlantChange()">
                 <option value="">Select Plant</option>
                 <option>CR11</option>
                 <option>CR12</option>
@@ -579,7 +594,7 @@ input[type=text].err{border-color:#e53e3e}
           <div class="form-grid">
             <div class="form-row">
               <label>Source Plant <span class="req">*</span></label>
-              <select class="sel" id="ster-from-plant">
+              <select class="sel" id="ster-from-plant" onchange="onFromPlantChange()">
                 <option value="">Select Plant</option>
                 <option>CR11</option>
                 <option>CR12</option>
@@ -1117,6 +1132,7 @@ function showPage(id) {
 
 /* ── Process Dialog ────────────────────────────────── */
 function openProcessDialog() {
+  resetProcessModal();
   document.getElementById('process-modal').classList.add('open');
 }
 
@@ -1124,6 +1140,9 @@ function onProcessTypeChange() {
   const val = document.getElementById('sel-process').value;
   document.querySelectorAll('.proc-section').forEach(s => s.classList.remove('visible'));
   if (val) document.getElementById('sec-' + val)?.classList.add('visible');
+  const showRefHU = selectionMode === 'reference-hu' && (val === 'push' || val === 'sterilization');
+  document.getElementById('ref-hu-row').style.display = showRefHU ? '' : 'none';
+  if (!showRefHU) clearRefHUAutoPopulate();
 }
 
 function onShipmentTypeChange(prefix) {
@@ -1133,6 +1152,89 @@ function onShipmentTypeChange(prefix) {
   sec.querySelectorAll('.ship-so').forEach(r => r.style.display = type === 'SO' ? '' : 'none');
 }
 
+/* â”€â”€â”€ Selection-mode (Reference HU) helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+let selectionMode = 'destination';
+
+function onSelectionModeChange() {
+  selectionMode = document.querySelector('input[name="sel-mode"]:checked').value;
+  onProcessTypeChange();
+  clearRefHUAutoPopulate();
+  const inp = document.getElementById('ref-hu-input');
+  if (inp) inp.value = '';
+}
+
+function onFromPlantChange() {
+  if (selectionMode === 'reference-hu') onRefHUInput();
+}
+
+function onRefHUInput() {
+  const refHU    = document.getElementById('ref-hu-input').value.trim();
+  const procType = document.getElementById('sel-process').value;
+  const prefix   = procType === 'sterilization' ? 'ster' : 'push';
+  const fromPlant = document.getElementById(prefix + '-from-plant').value;
+  if (refHU.length >= 3 && fromPlant) {
+    applyRefHUAutoPopulate(prefix, refHU, fromPlant);
+  } else {
+    clearRefHUAutoPopulate();
+  }
+}
+
+function applyRefHUAutoPopulate(prefix, refHU, fromPlant) {
+  const slocOpts = ['1000', '2000', 'SUK1', 'SUS1', 'SUS2', 'SUS3', 'SUS4', 'SUS5'];
+  const wcOpts   = ['Pack 1', 'Pack 2'];
+  const h1 = refHU.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  const h2 = h1 ^ fromPlant.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  const fromSloc = slocOpts[h1 % slocOpts.length];
+  let toIdx = (h2 + 3) % slocOpts.length;
+  if (slocOpts[toIdx] === fromSloc) toIdx = (toIdx + 1) % slocOpts.length;
+  const toSloc = slocOpts[toIdx];
+  const wc  = wcOpts[h1 % wcOpts.length];
+  const bin = String.fromCharCode(65 + (h1 % 8)) + String(10 + (h2 % 89)).toString().padStart(2, '0');
+  setFieldFrozen(prefix + '-from-sloc', true, fromSloc);
+  setFieldFrozen(prefix + '-to-sloc',   true, toSloc);
+  setFieldFrozen(prefix + '-wc',        true, wc);
+  setFieldFrozen(prefix + '-bin',       true, bin);
+}
+
+function clearRefHUAutoPopulate() {
+  ['push', 'ster'].forEach(p => {
+    ['from-sloc', 'to-sloc', 'wc', 'bin'].forEach(f => setFieldFrozen(p + '-' + f, false));
+  });
+}
+
+function setFieldFrozen(id, frozen, value) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.disabled = frozen;
+  el.style.background  = frozen ? '#f0f4f8' : '';
+  el.style.color       = frozen ? '#444'    : '';
+  el.style.cursor      = frozen ? 'default' : '';
+  el.style.borderColor = frozen ? '#c5d5e8' : '';
+  if (frozen && value !== undefined) {
+    if (el.tagName === 'SELECT') {
+      const found = [...el.options].find(o => o.value === value || o.text === value);
+      if (found) {
+        el.value = found.value;
+      } else {
+        const opt = document.createElement('option');
+        opt.value = value; opt.text = value; opt.dataset.autoAdded = '1';
+        el.appendChild(opt);
+        el.value = value;
+      }
+    } else {
+      el.value = value;
+    }
+  } else if (!frozen) {
+    el.style.background = '';
+    if (el.tagName === 'SELECT') {
+      [...el.querySelectorAll('[data-auto-added]')].forEach(o => o.remove());
+      el.value = '';
+    } else {
+      el.value = '';
+    }
+  }
+}
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function syncStorageLocations(prefix) {
   const fromSel = document.getElementById(prefix + '-from-sloc');
   const toSel   = document.getElementById(prefix + '-to-sloc');
@@ -1260,6 +1362,19 @@ function startPackingProcess() {
   buildHUTree();
   selectHU('1231451251');
   toast('Handling units loaded successfully', 'success');
+}
+
+function resetProcessModal() {
+  selectionMode = 'destination';
+  const rb = document.querySelector('input[name="sel-mode"][value="destination"]');
+  if (rb) rb.checked = true;
+  const inp = document.getElementById('ref-hu-input');
+  if (inp) inp.value = '';
+  const row = document.getElementById('ref-hu-row');
+  if (row) row.style.display = 'none';
+  clearRefHUAutoPopulate();
+  document.getElementById('sel-process').value = '';
+  document.querySelectorAll('.proc-section').forEach(s => s.classList.remove('visible'));
 }
 
 function resetPackingState() {
