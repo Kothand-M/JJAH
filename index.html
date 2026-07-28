@@ -1190,6 +1190,8 @@ function applyRefHUAutoPopulate(prefix, refHU, fromPlant) {
   const toSloc = slocOpts[toIdx];
   const wc  = wcOpts[h1 % wcOpts.length];
   const bin = String.fromCharCode(65 + (h1 % 8)) + String(10 + (h2 % 89)).toString().padStart(2, '0');
+  const fromPlantVal = (document.getElementById(prefix + '-from-plant') || {}).value || fromPlant;
+  setFieldFrozen(prefix + '-to-plant',  true, fromPlantVal);
   setFieldFrozen(prefix + '-from-sloc', true, fromSloc);
   setFieldFrozen(prefix + '-to-sloc',   true, toSloc);
   setFieldFrozen(prefix + '-wc',        true, wc);
@@ -1198,7 +1200,7 @@ function applyRefHUAutoPopulate(prefix, refHU, fromPlant) {
 
 function clearRefHUAutoPopulate() {
   ['push', 'ster'].forEach(p => {
-    ['from-sloc', 'to-sloc', 'wc', 'bin'].forEach(f => setFieldFrozen(p + '-' + f, false));
+    ['to-plant', 'from-sloc', 'to-sloc', 'wc', 'bin'].forEach(f => setFieldFrozen(p + '-' + f, false));
   });
 }
 
