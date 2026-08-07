@@ -218,7 +218,16 @@ input[type=text].err{border-color:#e53e3e}
 .pull-info-bar{display:flex;gap:16px;padding:4px 10px 8px 10px;font-size:11px}
 .pull-info-bar .lbl{color:#666}
 .pull-info-bar .val{color:#0854A0;font-weight:500}
+.multi-input-wrap{border:1px solid #bcc3ce;border-radius:4px;padding:6px 8px;background:#fff;min-height:40px}
+.multi-tokens{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;min-height:20px}
+.multi-token{display:inline-flex;align-items:center;gap:5px;background:#e8f0fe;border:1px solid #b0c4de;border-radius:12px;padding:2px 10px;font-size:12px;color:#1a3a5c;font-family:monospace}
+.multi-token-del{cursor:pointer;color:#556;font-size:15px;line-height:1;margin-left:2px}
+.multi-token-del:hover{color:#c00}
+.prod-order-item{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-bottom:1px solid #eee;font-size:13px}
+.prod-order-item:last-child{border-bottom:none}
+.prod-order-item span{font-family:monospace;color:#1a3a5c}
 </style>
+
 </head>
 <body>
 
@@ -284,6 +293,11 @@ input[type=text].err{border-color:#e53e3e}
             <div id="pull-info-bar" class="pull-info-bar" style="display:none">
               <span><span class="lbl">Order number: </span><span class="val" id="pull-order-display"></span></span>
               <span><span class="lbl">Delivery number: </span><span class="val" id="pull-delivery-display"></span></span>
+            </div>
+
+            <div id="ster-info-bar" class="pull-info-bar" style="display:none">
+              <span><span class="lbl">STO/Order: </span><span class="val" id="ster-sto-bar-display"></span></span>
+              <span><span class="lbl">Production Orders: </span><span class="val" id="prod-orders-display">-</span></span>
             </div>
 
             <div class="panel-title" style="border-top:1px solid #eee">HU Contents</div>
@@ -668,6 +682,16 @@ input[type=text].err{border-color:#e53e3e}
               <label>Order Number <span class="req">*</span></label>
               <input type="text" id="ster-order" placeholder="Enter Order Number" maxlength="20"/>
             </div>
+            <div class="form-row" style="grid-column:1/-1">
+              <label>Production Order(s)</label>
+              <div class="multi-input-wrap" id="prod-orders-wrap">
+                <div class="multi-tokens" id="prod-orders-tokens"></div>
+                <div style="display:flex;gap:6px;align-items:center">
+                  <input type="text" class="sel" id="prod-order-inline" placeholder="Scan / Enter production order, press Enter to add" maxlength="20" style="flex:1;margin:0" onkeydown="onProdOrderKeydown(event)"/>
+                  <button type="button" class="btn btn-outline" onclick="openProdOrdersDialog()" title="Open multi-entry" style="padding:5px 11px;font-size:18px;line-height:1;flex-shrink:0">+</button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -675,6 +699,30 @@ input[type=text].err{border-color:#e53e3e}
     </div>
     <div class="modal-footer">
       <button class="btn btn-primary" onclick="proceedProcess()">Proceed</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     MODAL: Production Orders Multi-Entry
+════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="prod-orders-modal">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2>Production Order(s)</h2>
+      <p>Add one or more production order numbers</p>
+    </div>
+    <div class="modal-body" style="padding:16px">
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <input type="text" class="sel" id="prod-order-modal-input" placeholder="Scan / Enter order number" maxlength="20" style="flex:1" onkeydown="onProdOrderModalKeydown(event)"/>
+        <button class="btn btn-primary" onclick="addProdOrderFromModal()">Add</button>
+      </div>
+      <div id="prod-orders-list" style="min-height:60px;max-height:260px;overflow-y:auto;border:1px solid #e0e5ec;border-radius:4px">
+        <div style="padding:14px;text-align:center;color:#888;font-size:13px">No orders added yet</div>
+      </div>
+    </div>
+    <div class="modal-footer center">
+      <button class="btn btn-primary" onclick="closeModal('prod-orders-modal')">Done</button>
     </div>
   </div>
 </div>
@@ -1361,12 +1409,24 @@ function startPackingProcess() {
     pullBar.style.display = 'none';
   }
 
+  // Sterilization info bar
+  const sterBar = document.getElementById('ster-info-bar');
+  if (currentProcess === 'sterilization') {
+    sterBar.style.display = 'flex';
+    document.getElementById('ster-sto-bar-display').textContent = stoNumber || '-';
+    renderProdOrdersList();
+  } else {
+    sterBar.style.display = 'none';
+  }
+
   buildHUTree();
   selectHU('1231451251');
   toast('Handling units loaded successfully', 'success');
 }
 
 function resetProcessModal() {
+  prodOrders = [];
+  renderProdOrderTokens();
   selectionMode = 'destination';
   const rb = document.querySelector('input[name="sel-mode"][value="destination"]');
   if (rb) rb.checked = true;
@@ -1378,6 +1438,73 @@ function resetProcessModal() {
   document.getElementById('sel-process').value = '';
   document.querySelectorAll('.proc-section').forEach(s => s.classList.remove('visible'));
 }
+
+/* --- Production Orders (Sterilization) --- */
+let prodOrders = [];
+
+function addProdOrder(val) {
+  val = (val || '').trim().toUpperCase();
+  if (!val) return;
+  if (prodOrders.includes(val)) { toast('Order ' + val + ' already added', 'error'); return; }
+  prodOrders.push(val);
+  renderProdOrderTokens();
+  renderProdOrdersList();
+}
+
+function removeProdOrder(idx) {
+  prodOrders.splice(idx, 1);
+  renderProdOrderTokens();
+  renderProdOrdersList();
+}
+
+function renderProdOrderTokens() {
+  var wrap = document.getElementById('prod-orders-tokens');
+  if (!wrap) return;
+  wrap.innerHTML = prodOrders.map(function(o, i) {
+    return '<span class="multi-token">' + o + ' <span class="multi-token-del" onclick="removeProdOrder(' + i + ')">&#xD7;</span></span>';
+  }).join('');
+}
+
+function renderProdOrdersList() {
+  var list = document.getElementById('prod-orders-list');
+  if (list) {
+    if (prodOrders.length === 0) {
+      list.innerHTML = '<div style="padding:14px;text-align:center;color:#888;font-size:13px">No orders added yet</div>';
+    } else {
+      list.innerHTML = prodOrders.map(function(o, i) {
+        return '<div class="prod-order-item"><span>' + o + '</span>' +
+          '<button class="btn" style="padding:2px 8px;font-size:12px;background:#fff0f0;border-color:#fcc;color:#c00" onclick="removeProdOrder(' + i + ')">Remove</button></div>';
+      }).join('');
+    }
+  }
+  var disp = document.getElementById('prod-orders-display');
+  if (disp) disp.textContent = prodOrders.length ? prodOrders.join(', ') : '-';
+}
+
+function onProdOrderKeydown(e) {
+  if (e.key === 'Enter') {
+    var inp = document.getElementById('prod-order-inline');
+    addProdOrder(inp.value);
+    inp.value = '';
+    e.preventDefault();
+  }
+}
+
+function onProdOrderModalKeydown(e) {
+  if (e.key === 'Enter') { addProdOrderFromModal(); e.preventDefault(); }
+}
+
+function addProdOrderFromModal() {
+  var inp = document.getElementById('prod-order-modal-input');
+  if (inp) { addProdOrder(inp.value); inp.value = ''; inp.focus(); }
+}
+
+function openProdOrdersDialog() {
+  renderProdOrdersList();
+  openModal('prod-orders-modal');
+  setTimeout(function() { var i = document.getElementById('prod-order-modal-input'); if (i) i.focus(); }, 150);
+}
+/* ---------------------------------------------------------- */
 
 function resetPackingState() {
   selectedPallets.clear();
