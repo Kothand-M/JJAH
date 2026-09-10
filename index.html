@@ -283,10 +283,6 @@ input[type=text].err{border-color:#e53e3e}
         <div class="hu-tree-panel">
           <div class="panel-title">Handling Units</div>
           <div id="hu-tree-body"></div>
-          <div id="shipper-boxes-section" style="display:none">
-            <div class="panel-title" style="border-top:1px solid #eee;color:#0854A0">Shipper Boxes</div>
-            <div id="shipper-boxes-body" style="overflow-y:auto;max-height:180px"></div>
-          </div>
         </div>
 
         <!-- Right side -->
@@ -1483,7 +1479,6 @@ function renderProdOrdersList() {
   }
   var disp = document.getElementById('prod-orders-display');
   if (disp) disp.textContent = prodOrders.length ? prodOrders.join(', ') : '-';
-  renderShipperBoxes();
 }
 
 function onProdOrderKeydown(e) {
@@ -1511,41 +1506,6 @@ function openProdOrdersDialog() {
 }
 /* ---------------------------------------------------------- */
 
-function renderShipperBoxes() {
-  var section = document.getElementById('shipper-boxes-section');
-  var body    = document.getElementById('shipper-boxes-body');
-  if (!section || !body) return;
-  if (currentProcess !== 'sterilization' || prodOrders.length === 0) {
-    section.style.display = 'none';
-    return;
-  }
-  section.style.display = 'block';
-  body.innerHTML = '';
-  var boxes = genShipperBoxIds();
-  boxes.forEach(function(bid) {
-    var row = document.createElement('div');
-    row.className = 'tree-row' + (bid === selectedHUId ? ' selected' : '');
-    row.setAttribute('data-hu', bid);
-    row.innerHTML = '<div style="width:20px"></div><div style="width:5px"></div>' +
-      '<span class="tree-icon box">&#x1F4EB;</span>' +
-      '<span class="tree-label">' + bid + '</span>' +
-      '<span class="tree-sub">&nbsp;(Shipper)</span>';
-    row.onclick = function() { selectHU(bid); };
-    body.appendChild(row);
-  });
-}
-
-function genShipperBoxIds() {
-  var boxes = [];
-  prodOrders.forEach(function(ord) {
-    var h = ord.split('').reduce(function(a, c) { return (a * 31 + c.charCodeAt(0)) & 0x7fffffff; }, 0);
-    for (var i = 0; i < 3; i++) {
-      boxes.push('SB' + String((h * (i + 7) * 13) % 900000000 + 100000000).slice(0, 9));
-    }
-  });
-  return boxes;
-}
-
 function resetPackingState() {
   selectedPallets.clear();
   acknowledgedPallets.clear();
@@ -1559,7 +1519,6 @@ function resetPackingState() {
 function buildHUTree() {
   const body = document.getElementById('hu-tree-body');
   body.innerHTML = '';
-  renderShipperBoxes();
 
   if (currentProcess === 'pull') {
     const palletsSection = document.createElement('div');
