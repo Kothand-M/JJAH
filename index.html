@@ -679,7 +679,7 @@ input[type=text].err{border-color:#e53e3e}
               <input type="text" id="ster-bin" placeholder="Enter Storage Bin"/>
             </div>
             <div class="form-row">
-              <label>Order Number <span class="req">*</span></label>
+              <label>Order Number</label>
               <input type="text" id="ster-order" placeholder="Enter Order Number" maxlength="20"/>
             </div>
             <div class="form-row" style="grid-column:1/-1">
@@ -1341,10 +1341,8 @@ function proceedProcess() {
 
   } else if (type === 'sterilization') {
     if (!validateShipmentFields('ster')) return;
-    const order = document.getElementById('ster-order').value.trim();
-    if (!order) { toast('Please enter the Order Number', 'error'); return; }
     currentProcess = 'sterilization';
-    stoNumber = order;
+    stoNumber = document.getElementById('ster-order').value.trim();
     startPackingProcess();
   }
 }
